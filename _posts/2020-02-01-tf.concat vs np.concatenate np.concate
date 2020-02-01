@@ -53,3 +53,7 @@ array([[[ 1, 2, 3],
 
 `np.concatenate` expects a list of arrays, or an equivalent. In this case it treats `arr` as a list of 3 2d arrays. `np.concatenate(list(arr), axis=1))` does the same thing.
 For Tensorflow, `tf.concat` expects a list of tensors to be concatenated along an axis. If you specify only one tensor, it will just print that tensor and does nothing.
+
+
+
+Reference: https://stackoverflow.com/questions/47622350/tensorflow-vs-numpy-concat-operation
