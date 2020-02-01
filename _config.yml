@@ -7,7 +7,7 @@
 
 # Site Settings
 locale                   : "en-US"
-title                    : "Ideas that Matters"
+title                    : "Ideas Matter"
 title_separator          : "-"
 name                     : &name "Your Name"
 description              : &description "personal description"
