@@ -1,5 +1,5 @@
 ---
-title: tf.concat vs np.concatenate np.concate
+title: tf.concat vs np.concatenate
 date: 2020-02-01 10:36:45
 tags: TensorFlow, Numpy
 categories: TensorFlow, Numpy
