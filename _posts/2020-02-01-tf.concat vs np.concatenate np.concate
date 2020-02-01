@@ -1,0 +1,55 @@
+---
+title: tf.concat vs np.concatenate np.concate
+date: 2020-02-01 10:36:45
+tags: TensorFlow, Numpy
+categories: TensorFlow, Numpy
+---
+
+In Numpy,
+
+```
+arr = np.array(
+[
+ [
+   [1,2,3,],
+   [4,5,6,]
+ ],
+
+ [
+   [7,8,9],
+   [10,11,12]
+ ],
+
+ [
+   [13,14,15],
+   [16,17,18]
+ ]
+
+])
+```
+
+`np.concatenate(arr,axis=1)` outputs
+
+```
+array([[ 1, 2, 3, 7, 8, 9, 13, 14, 15],
+[ 4, 5, 6, 10, 11, 12, 16, 17, 18]])
+```
+
+In Tensorflow,
+
+
+`tf.concat(arr ,axis=1)` outputs
+
+```
+array([[[ 1, 2, 3],
+[ 4, 5, 6]],
+
+   [[ 7,  8,  9],
+    [10, 11, 12]],
+
+   [[13, 14, 15],
+    [16, 17, 18]]])
+```
+
+`np.concatenate` expects a list of arrays, or an equivalent. In this case it treats `arr` as a list of 3 2d arrays. `np.concatenate(list(arr), axis=1))` does the same thing.
+For Tensorflow, `tf.concat` expects a list of tensors to be concatenated along an axis. If you specify only one tensor, it will just print that tensor and does nothing.
