@@ -1,0 +1,126 @@
+---
+title: tf.nn.embedding_lookup_sparse 3D sparse tensor input
+date: 2019-02-01 18:13:23
+tags: TensorFlow
+categories: TensorFlow
+---
+
+<!-- language: python -->
+
+I have an embedding matrix and there is a 3D sparse tensor which is used to get the embedding output, after reading the docs of [`tf.nn.embedding_lookup_sparse`][1] I found it only supports 2D sparse tensors,
+
+> sp_ids: N x M SparseTensor of int64 ids where N is typically batch size and M is arbitrary.
+
+
+My example code here
+
+```python
+import numpy as np
+import tensorflow as tf
+tf.enable_eager_execution()
+
+# [feature number, embedding dim] 
+w = tf.get_variable("w", [4, 4], initializer=tf.random_normal_initializer())
+
+z = np.array(
+     [
+      [
+        [0, 1, 2, 3],   # get the vector of row 0, 1, 2, 3 of the embedding matrix w and get the sum
+        [2, 3]
+      ],
+     
+      [
+        [1, 3],
+        [2]
+      ],
+     
+      [
+        [0, 1, 3],
+        [1, 2]
+      ]
+     ])
+
+sp = tf.SparseTensor(values=[0, 1, 2, 3, 2, 3, 1, 3, 2, 0, 1, 3, 1, 2],
+                     indices=[[0,0,0],[0,0,1],[0,0,2],[0,0,3],[0,1,2],
+                              [0,1,3],[1,0,1],[1,0,3],[1,1,2],[2,0,0],
+                              [2,0,1],[2,0,3],[2,1,1],[2,1,2]],
+                     dense_shape=[3, 2, 4])
+
+tf.nn.embedding_lookup_sparse(w, sp, None, combiner='sum')
+# the outputs
+<tf.Tensor: id=970, shape=(3, 4), dtype=float32, numpy=
+array([[-5.8729677 , -1.3900641 ,  0.8126096 , -3.1223912 ],
+       [-1.0788026 , -1.1324122 ,  0.34160078,  0.23714277],
+       [-2.497394  , -2.7855003 ,  3.0201516 , -1.8009453 ]],
+      dtype=float32)>
+
+print(w)
+<tf.Variable 'w:0' shape=(4, 4) dtype=float32, numpy=
+array([[-2.5669768 , -0.38916406,  1.4039794 , -2.8173826 ],
+       [ 1.1483854 , -1.2639242 ,  1.2745714 ,  0.7792944 ],
+       [-1.3400027 , -0.46362385, -1.3652185 ,  0.27220532],
+       [-0.8871854 ,  0.5951359 ,  0.43224794, -0.8143569 ]],
+      dtype=float32)>
+```
+
+But the expected output is a matrix with a dimension of `3x2x4`, not `3x4`. 
+
+Apparently `tf.nn.embedding_lookup_sparse` does not support this operation, but I can make the input sparse tensor as a 2D tensor and get the weights of the embedding matrix and then reshape.
+
+The following are my code,
+
+<!-- language: python -->
+
+    # First make the z as a 2D arr and create a sparse tensor 
+    z = np.array([
+            [0, 1, 2, 3],  # get the row 0,1,2,3 of the embedding matrix w and get the sum
+            [2, 3],
+            [1, 3],
+            [2],
+            [0, 1, 3],
+            [1, 2]
+          ])
+
+    sp = tf.SparseTensor(values=[0, 1, 2, 3, 2, 3, 1, 3, 2, 0, 1, 3, 1, 2],
+                         indices=[[0,0],[0,1],[0,2],[0,3],[1,2],[1,3],[2,1],
+                                  [2,3],[3,2],[4,0],[4,1],[4,3],[5,1],[5,2]],
+                         dense_shape=[6, 4])
+     
+    res = tf.nn.embedding_lookup_sparse(w, sp, None, combiner='sum')
+    
+    res.numpy()
+    # the output
+    array([[-3.6457794 , -1.5215762 ,  1.7455802 , -2.5802398 ],
+           [-2.227188  ,  0.13151208, -0.9329706 , -0.5421516 ],
+           [ 0.2612    , -0.6687883 ,  1.7068193 , -0.03506255],
+           [-1.3400027 , -0.46362385, -1.3652185 ,  0.27220532],
+           [-2.3057768 , -1.0579524 ,  3.1107986 , -2.8524451 ],
+           [-0.19161725, -1.7275481 , -0.0906471 ,  1.0514997 ]],
+    
+    # reshape
+    tf.reshape(res, [-1, 2, 4])
+    # that is exacly what I want.
+    array([[[-3.6457794 , -1.5215762 ,  1.7455802 , -2.5802398 ],
+            [-2.227188  ,  0.13151208, -0.9329706 , -0.5421516 ]],
+    
+           [[ 0.2612    , -0.6687883 ,  1.7068193 , -0.03506255],
+            [-1.3400027 , -0.46362385, -1.3652185 ,  0.27220532]],
+    
+           [[-2.3057768 , -1.0579524 ,  3.1107986 , -2.8524451 ],
+            [-0.19161725, -1.7275481 , -0.0906471 ,  1.0514997 ]]])
+
+    # print w, and the above result is right
+    w.numpy()
+
+    array([[-2.5669768 , -0.38916406,  1.4039794 , -2.8173826 ],
+           [ 1.1483854 , -1.2639242 ,  1.2745714 ,  0.7792944 ],
+           [-1.3400027 , -0.46362385, -1.3652185 ,  0.27220532],
+           [-0.8871854 ,  0.5951359 ,  0.43224794, -0.8143569 ]],
+          dtype=float32)
+
+
+So, forget the 3D sparse tensor, simply convert it to 2D tensor. Because you only care about the values (index of rows, which are used to get the corresponding rows of the embedding matrix) in the sparse tensor.
+
+
+
+  [1]: https://www.tensorflow.org/api_docs/python/tf/nn/embedding_lookup_sparse
